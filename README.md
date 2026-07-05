@@ -86,7 +86,7 @@ Runs backend unit tests validating timetable scheduling logic.
 
 ![](screenshots/Dashboard.png) 
 
-Faculty workload
+Faculty-workload
 ![](screenshots/Faculty-workload.png)|
 
  Timetable
