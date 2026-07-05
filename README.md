@@ -82,12 +82,13 @@ Runs backend unit tests validating timetable scheduling logic.
 -  Unit testing using Pytest
 ## 📷 Screenshots
 
-| Dashboard|Faculty workload |
+ Dashboard
 
-| ![](screenshots/Dashboard.png) | ![](screenshots/Faculty workload.png) |
+![](screenshots/Dashboard.png) 
+![Faculty Workload](screenshots/faculty-workload.png)|
 
   Timetable
- ![](screenshots/timetable.png) 
+ ![](screenshots/Timetable.png) 
 ## API Endpoints
 
 - `GET /api/timetable` — fetch generated timetable
