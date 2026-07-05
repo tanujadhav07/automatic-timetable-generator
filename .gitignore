@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual Environments
+.venv/
+venv/
+
+# Logs
+*.log
+_server_err.txt
+_server_out.txt
+debug_output.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Environment Variables
+.env
+
+# Python cache
+*.pyo
+*.pyd
+
+# Coverage
+.coverage
+htmlcov/
+
+# Misc
+*.sqlite3
+
+# Node.js
+node_modules/
+frontend/node_modules/
+
+# Build output
+dist/
+frontend/dist/
+
+# Vite cache
+.vite/
+frontend/.vite/
+
+# Runtime data
+contact_messages.json
+users.json
+user_data.json
+full_results.txt

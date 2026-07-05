@@ -1,0 +1,2432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Timetable Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jsPDF & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --neon-blue: #00d4ff;
+            --neon-purple: #b829dd;
+            --neon-pink: #ff006e;
+            --neon-cyan: #06ffa5;
+            --neon-yellow: #ffe66d;
+        }
+
+        /* Auth Overlay */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #auth-overlay.authenticated {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.1);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 2.5rem;
+            padding: 3.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: var(--primary-gradient);
+        }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 50%, #f0f4f8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-size: 16px !important;
+            line-height: 1.6;
+        }
+        
+        /* Headings - larger but with proper spacing */
+        h1 {
+            font-size: 2rem !important;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 1.6rem !important;
+            line-height: 1.4;
+            margin-bottom: 0.8rem;
+        }
+        
+        h3 {
+            font-size: 1.4rem !important;
+            line-height: 1.4;
+        }
+        
+        /* Regular text elements */
+        p, span, div, label {
+            font-size: 1rem !important;
+            line-height: 1.6;
+        }
+        
+        /* Interactive elements */
+        button, input, select, textarea {
+            font-size: 1rem !important;
+            padding: 0.6rem 1rem;
+        }
+        
+        /* Table cells - readable but not too large */
+        td, th {
+            font-size: 0.95rem !important;
+            padding: 0.75rem;
+            line-height: 1.5;
+        }
+        
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(-45deg, #f5f7fa, #e8ecf1, #f0f4f8, #e0e7ee, #f8fafc, #edf2f7);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Floating Shapes */
+        .floating-shape {
+            position: fixed;
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: -1;
+            animation: floatShape 20s infinite ease-in-out;
+        }
+        
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #00d4ff, #b829dd);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #ff006e, #ffe66d);
+            top: 60%;
+            right: 10%;
+            animation-delay: 5s;
+        }
+        
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, #06ffa5, #00d4ff);
+            bottom: 10%;
+            left: 30%;
+            animation-delay: 10s;
+        }
+        
+        @keyframes floatShape {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(50px, -50px) rotate(90deg); }
+            50% { transform: translate(0, -100px) rotate(180deg); }
+            75% { transform: translate(-50px, -50px) rotate(270deg); }
+        }
+        
+        /* Glass Morphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Card Hover Effects */
+        .hover-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .hover-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Button Animations */
+        .btn-animated {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-animated::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-animated:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-animated:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #f093fb 50%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Pulse Animation */
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8), 0 0 60px rgba(240, 147, 251, 0.4); }
+        }
+        
+        /* Shimmer Effect */
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Rotate Animation */
+        .rotate-slow {
+            animation: rotateSlow 20s linear infinite;
+        }
+        
+        @keyframes rotateSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Bounce Animation */
+        .bounce-soft {
+            animation: bounceSoft 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounceSoft {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* Slide In Animation */
+        .slide-in {
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Scale In Animation */
+        .scale-in {
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        /* Banner Shimmer Animation */
+        .animate-shimmer {
+            animation: bannerShimmer 3s infinite;
+        }
+        
+        @keyframes bannerShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+        
+        /* Banner Marquee */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 20s linear infinite;
+        }
+        
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        /* Features Scrolling Marquee */
+        .marquee-wrapper {
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        .animate-scroll-right-x {
+            display: flex;
+            width: max-content;
+            animation: scroll-right 30s linear infinite;
+            will-change: transform;
+        }
+        
+        .animate-scroll-right-x:hover {
+            animation-play-state: paused;
+        }
+        
+        @keyframes scroll-right {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* Sidebar Styles */
+        .sidebar-active { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+            transform: scale(1.05);
+        }
+        
+        /* Project Cell */
+        .project-cell { 
+            background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); 
+            color: #e11d48; 
+            border: 2px dashed #fda4af;
+            animation: pulseBorder 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseBorder {
+            0%, 100% { border-color: #fda4af; }
+            50% { border-color: #f43f5e; }
+        }
+        
+        /* Lunch Cell */
+        .lunch-cell { 
+            background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); 
+            color: #a16207; 
+            border: 2px solid #fef08a;
+        }
+        
+        /* Busy Cell */
+        .busy-cell { 
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); 
+            color: #1d4ed8; 
+            border-left: 4px solid #3b82f6;
+        }
+        
+        /* T&P Cell */
+        .tp-cell { 
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); 
+            color: #c2410c; 
+            border: 2px solid #fdba74;
+            animation: pulseBorderOrange 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseBorderOrange {
+            0%, 100% { border-color: #fdba74; }
+            50% { border-color: #f97316; }
+        }
+        
+        /* Library Cell */
+        .library-cell { 
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
+            color: #15803d; 
+            border: 2px solid #86efac;
+            animation: pulseBorderGreen 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseBorderGreen {
+            0%, 100% { border-color: #86efac; }
+            50% { border-color: #22c55e; }
+        }
+        
+        /* Navigation Active State */
+        .nav-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+    <!-- Auth Overlay -->
+    <div id="auth-overlay">
+        <div class="auth-card scale-in">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl shadow-indigo-500/20 mb-6 bounce-soft">
+                    <i data-lucide="shield-check" class="text-white w-10 h-10"></i>
+                </div>
+                <h1 id="auth-title" class="text-3xl font-black text-slate-900 tracking-tight mb-2">Welcome Back</h1>
+                <p id="auth-subtitle" class="text-slate-500 font-medium">Please sign in to access your Studio</p>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Username</label>
+                    <div class="relative group">
+                        <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                        <input type="text" id="auth-username" class="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700" placeholder="Enter username">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                    <div class="relative group">
+                        <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                        <input type="password" id="auth-password" class="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700" placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <button onclick="handleAuth()" id="auth-submit-btn" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-3 transition-all active:scale-95 btn-animated mt-4">
+                    <span id="auth-btn-text">Sign In to Studio</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+
+                <div class="text-center pt-4">
+                    <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                        New here? <span class="text-indigo-600">Create a Studio Account</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    
+    <!-- Floating Shapes -->
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    <div class="floating-shape shape-3"></div>
+    <div id="app-structure" class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-72 bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col fixed h-full shadow-2xl z-50">
+            <div class="p-8 border-b border-white/10">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 bg-gradient-to-br from-pink-500 via-purple-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 bounce-soft">
+                        <i data-lucide="calendar" class="text-white w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-extrabold text-xl text-white tracking-tight" id="college-name-nav">Studio</h2>
+                        <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-purple-300">Timetable Pro</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-grow p-6 space-y-3 mt-4">
+                <button onclick="showPage('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/10 hover:translate-x-2 transition-all sidebar-active group">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 transition-transform group-hover:scale-110 group-hover:rotate-12"></i> Dashboard
+                </button>
+                <button onclick="showPage('setup')" id="nav-setup" class="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/10 hover:translate-x-2 transition-all group">
+                    <i data-lucide="settings-2" class="w-5 h-5 transition-transform group-hover:scale-110 group-hover:rotate-45"></i> Configuration
+                </button>
+                <button onclick="showPage('guide')" id="nav-guide" class="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/10 hover:translate-x-2 transition-all group">
+                    <i data-lucide="help-circle" class="w-5 h-5 transition-transform group-hover:scale-110"></i> Usage Guide
+                </button>
+                
+                <div id="nav-tables-section" class="hidden space-y-3 pt-6 border-t border-white/10 mt-6">
+                    <p class="px-4 text-[10px] font-black uppercase tracking-widest text-purple-300 mb-2">Analytics & Views</p>
+                    <button onclick="showPage('class-view')" id="nav-class-view" class="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/10 hover:translate-x-2 transition-all group">
+                        <i data-lucide="users-2" class="w-5 h-5 group-hover:text-pink-400 transition-colors"></i> Class Schedules
+                    </button>
+                    <button onclick="showPage('teacher-view')" id="nav-teacher-view" class="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/10 hover:translate-x-2 transition-all group">
+                        <i data-lucide="user-square-2" class="w-5 h-5 group-hover:text-cyan-400 transition-colors"></i> Teacher Workload
+                    </button>
+                    <button onclick="showPage('batch-view')" id="nav-batch-view" class="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/10 hover:translate-x-2 transition-all group">
+                        <i data-lucide="layers" class="w-5 h-5 group-hover:text-emerald-400 transition-colors"></i> Batch Schedule
+                    </button>
+                </div>
+            </nav>
+
+            <div class="p-6 border-t border-white/10 bg-black/20">
+                <button onclick="generateTimetable()" class="w-full py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 hover:from-pink-400 hover:via-purple-400 hover:to-cyan-400 text-white font-bold rounded-2xl shadow-xl shadow-purple-500/30 flex items-center justify-center gap-3 transition-all active:scale-95 group btn-animated pulse-glow">
+                    <i data-lucide="sparkles" class="w-5 h-5 group-hover:animate-spin"></i> <span>Build Schedule</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-72 flex-grow relative">
+            <!-- Advertisement Banner -->
+            <div id="ad-banner" class="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white py-2 px-4 overflow-hidden relative">
+                <div class="flex items-center justify-center gap-4">
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Ad</span>
+                    <div id="ad-content" class="flex items-center gap-2 text-sm font-medium">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span id="ad-text">Upgrade to Pro - Get unlimited timetables and advanced analytics!</span>
+                    </div>
+                    <button onclick="closeAdBanner()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <!-- Animated shine effect -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer"></div>
+            </div>
+
+            <!-- Top Navigation Bar -->
+            <nav class="glass px-8 py-4 sticky top-0 z-40 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-pink-500 via-purple-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30 rotate-slow">
+                        <i data-lucide="calendar" class="text-white w-5 h-5"></i>
+                    </div>
+                    <span class="font-bold text-slate-800 text-lg gradient-text">Timetable Studio</span>
+                </div>
+                <div class="flex items-center gap-2 bg-white/20 p-1.5 rounded-2xl backdrop-blur-sm">
+                    <button onclick="showPage('dashboard')" id="top-nav-dashboard" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-white hover:shadow-lg transition-all">Home</button>
+                    <button onclick="showPage('setup')" id="top-nav-setup" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-white hover:shadow-lg transition-all">Configuration</button>
+                    <button onclick="showPage('guide')" id="top-nav-guide" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-white hover:shadow-lg transition-all">Guide</button>
+                    <button onclick="showPage('about')" id="top-nav-about" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-white hover:shadow-lg transition-all">About Us</button>
+                </div>
+            </nav>
+
+            <!-- Page Content Container -->
+            <div class="p-12 max-w-7xl pb-20">
+            <!-- Background Craft Decoration -->
+            <div class="absolute top-0 right-0 p-20 opacity-[0.03] pointer-events-none select-none">
+                <i data-lucide="calendar" class="w-96 h-96"></i>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alert-container" class="fixed top-8 right-8 z-[100] space-y-3 pointer-events-none"></div>
+
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page-content space-y-12">
+                <header class="flex justify-between items-end">
+                    <div class="slide-in">
+                        <h1 class="text-5xl font-black tracking-tight gradient-text" id="dashboard-welcome">Hello, Admin</h1>
+                        <p class="text-slate-600 mt-3 text-lg font-medium">Your academic ecosystem is looking healthy today.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="loadSampleData()" class="px-6 py-3 glass text-slate-700 font-bold rounded-2xl hover:bg-white/30 transition-all flex items-center gap-2 btn-animated">
+                            <i data-lucide="database" class="w-4 h-4"></i> Load Sample Data
+                        </button>
+                        <button onclick="resetAllData()" class="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold rounded-2xl hover:from-red-400 hover:to-pink-400 transition-all flex items-center gap-2 shadow-lg shadow-red-500/30 btn-animated">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="glass p-8 rounded-[2rem] hover-card group scale-in" style="animation-delay: 0.1s">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-500 text-xs font-black uppercase tracking-widest">Active Classes</p>
+                                <h3 class="text-5xl font-black mt-3 text-slate-800 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-cyan-500 transition-all" id="stat-classes">0</h3>
+                            </div>
+                            <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-cyan-400 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-400/30 group-hover:scale-110 group-hover:rotate-12 transition-all">
+                                <i data-lucide="layers" class="w-7 h-7"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass p-8 rounded-[2rem] hover-card group scale-in" style="animation-delay: 0.2s">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-500 text-xs font-black uppercase tracking-widest">Faculty Strength</p>
+                                <h3 class="text-5xl font-black mt-3 text-slate-800 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-500 group-hover:to-pink-500 transition-all" id="stat-teachers">0</h3>
+                            </div>
+                            <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-400 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-purple-400/30 group-hover:scale-110 group-hover:-rotate-12 transition-all">
+                                <i data-lucide="users" class="w-7 h-7"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass p-8 rounded-[2rem] hover-card group relative overflow-hidden scale-in" style="animation-delay: 0.3s">
+                        <div class="flex justify-between items-start relative z-10">
+                            <div>
+                                <p class="text-slate-500 text-xs font-black uppercase tracking-widest">Generation Status</p>
+                                <h3 class="text-4xl font-black mt-4 text-slate-400 transition-colors" id="stat-status">None</h3>
+                            </div>
+                            <div class="w-14 h-14 bg-gradient-to-br from-slate-400 to-slate-500 text-white rounded-2xl flex items-center justify-center shadow-lg transition-all" id="stat-icon">
+                                <i data-lucide="check-circle" class="w-7 h-7"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advertisement Banner for Timetable Generator -->
+                <section class="mt-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
+                    <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+                        <div class="flex items-center gap-6">
+                            <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                                <i data-lucide="calendar-check" class="w-10 h-10 text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-3xl font-black text-white">Timetable Generator Pro</h2>
+                                <p class="text-white/80 mt-2 text-lg">Create conflict-free schedules in minutes, not hours!</p>
+                                <div class="flex items-center gap-4 mt-3">
+                                    <span class="flex items-center gap-1 text-white/90 text-sm">
+                                        <i data-lucide="check-circle" class="w-4 h-4"></i> PDF Export
+                                    </span>
+                                    <span class="flex items-center gap-1 text-white/90 text-sm">
+                                        <i data-lucide="check-circle" class="w-4 h-4"></i> Auto Schedule
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <button onclick="showPage('setup')" class="px-8 py-4 bg-white text-purple-700 font-extrabold rounded-2xl hover:bg-purple-50 transition-all shadow-xl flex items-center gap-2">
+                                <i data-lucide="play" class="w-5 h-5"></i> Start Creating
+                            </button>
+                            <button onclick="showPage('guide')" class="px-8 py-4 bg-white/20 text-white font-extrabold rounded-2xl hover:bg-white/30 transition-all backdrop-blur-sm flex items-center gap-2">
+                                <i data-lucide="book-open" class="w-5 h-5"></i> Learn More
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Animated decorative elements -->
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                    <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-pink-500/30 rounded-full blur-2xl"></div>
+                </section>
+
+                <!-- Craft Visual Section -->
+                <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <h2 class="text-3xl font-black leading-tight">Smart Conflict<br>Resolution Engine</h2>
+                            <p class="mt-4 text-blue-100 text-lg leading-relaxed opacity-90">Our algorithm cross-checks over 1,200 constraints per second to ensure zero teacher overlaps and optimal lab utilization.</p>
+                            <button onclick="showPage('guide')" class="mt-8 px-8 py-4 bg-white text-blue-700 font-extrabold rounded-2xl hover:bg-blue-50 transition-all shadow-xl flex items-center gap-2">
+                                Learn How It Works <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div class="absolute -right-20 -bottom-20 opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-1000">
+                            <i data-lucide="zap" class="w-80 h-80"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-center">
+                        <h2 class="text-2xl font-black mb-6">Automated Workflows</h2>
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer">
+                                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-bold">01</div>
+                                <div>
+                                    <h4 class="font-extrabold text-slate-800">Resource Entry</h4>
+                                    <p class="text-sm text-slate-500">Define classes, teachers, and expertise areas.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer">
+                                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center font-bold">02</div>
+                                <div>
+                                    <h4 class="font-extrabold text-slate-800">Policy Selection</h4>
+                                    <p class="text-sm text-slate-500">Enable Lunch Breaks or Project Days with one click.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer">
+                                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold">03</div>
+                                <div>
+                                    <h4 class="font-extrabold text-slate-800">Instant Export</h4>
+                                    <p class="text-sm text-slate-500">Generate professional PDFs for faculty and notice boards.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Setup Page -->
+            <div id="page-setup" class="page-content hidden space-y-12">
+                <header>
+                    <h1 class="text-4xl font-black tracking-tight">Ecosystem Builder</h1>
+                    <p class="text-slate-500 mt-3 text-lg">Scale your academic infrastructure with precision.</p>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <!-- Left Column -->
+                    <div class="space-y-8">
+                        <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 craft-card">
+                            <h2 class="text-2xl font-black mb-8 flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                    <i data-lucide="landmark" class="w-5 h-5"></i>
+                                </div>
+                                Institution Branding
+                            </h2>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Official Name</label>
+                                    <input type="text" id="setup-college-name" onchange="state.collegeName = this.value; saveToStorage(); updateUI();" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold" placeholder="e.g. Stanford Institute of Technology">
+                                </div>
+                                <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group cursor-pointer hover:border-blue-300 transition-all">
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Unified Project Day</h4>
+                                        <p class="text-xs text-slate-500 mt-1">Full column merge for project work</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="setup-include-project" class="sr-only peer" onchange="state.includeProject = this.checked; saveToStorage();">
+                                        <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                            <h2 class="text-2xl font-black mb-8 flex items-center gap-3 text-emerald-700">
+                                <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                                </div>
+                                Register Class
+                            </h2>
+                            <div class="space-y-5">
+                                <input type="text" id="class-name" placeholder="Class Name (e.g., TY-COMP)" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-semibold">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <textarea id="class-lectures" placeholder="Lectures (e.g. OS, AI, CN)" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl h-28 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm"></textarea>
+                                    <textarea id="class-practicals" placeholder="Practicals (e.g. OS Lab, AI Lab)" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl h-28 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm"></textarea>
+                                </div>
+                                <input type="text" id="class-batches" placeholder="Batches (A, B, C, D)" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-semibold">
+                                <button onclick="addClass()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/10 transition-all active:scale-95">Add to Infrastructure</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-8">
+                        <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                            <h2 class="text-2xl font-black mb-8 flex items-center gap-3 text-purple-700">
+                                <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                                </div>
+                                Faculty Onboarding
+                            </h2>
+                            <div class="space-y-5">
+                                <div class="flex gap-4">
+                                    <input type="text" id="teacher-short" placeholder="Initial" class="w-1/4 p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all font-bold">
+                                    <input type="text" id="teacher-full" placeholder="Full Name" class="w-3/4 p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all font-semibold">
+                                </div>
+                                <textarea id="teacher-subjects" placeholder="Areas of Expertise (Subjects)" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl h-28 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all text-sm"></textarea>
+                                <button onclick="addTeacher()" class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl shadow-lg shadow-purple-600/10 transition-all active:scale-95">Enroll Faculty</button>
+                            </div>
+                        </div>
+
+                        <!-- Current List Preview -->
+                        <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 max-h-[500px] overflow-y-auto">
+                            <h2 class="text-xl font-black mb-6">Resource Summary</h2>
+                            <div class="space-y-8">
+                                <div>
+                                    <div class="flex justify-between items-center mb-4">
+                                        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Classes</p>
+                                        <span id="badge-classes" class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-black">0</span>
+                                    </div>
+                                    <div id="list-classes" class="flex flex-wrap gap-3"></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-4">
+                                        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Faculty</p>
+                                        <span id="badge-teachers" class="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-black">0</span>
+                                    </div>
+                                    <div id="list-teachers" class="flex flex-wrap gap-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Guide Page -->
+            <div id="page-guide" class="page-content hidden space-y-12">
+                <header>
+                    <h1 class="text-4xl font-black tracking-tight text-slate-900">Platform Guide</h1>
+                    <p class="text-slate-500 mt-3 text-lg font-medium">Everything you need to master the Studio.</p>
+                </header>
+
+                <!-- Big Timetable Preview Banner -->
+                <section class="rounded-[2.5rem] overflow-hidden shadow-2xl relative bg-gradient-to-b from-slate-800 via-slate-900 to-slate-800 min-h-[500px]">
+                    <!-- Timetable Visualization -->
+                    <div class="absolute inset-0 p-8">
+                        <div class="bg-white/5 rounded-3xl border border-white/10 p-6 h-full">
+                            <!-- Timetable Header -->
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                                        <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-white font-bold text-lg">Class Schedule</span>
+                                        <p class="text-white/50 text-sm">Sample Timetable Preview</p>
+                                    </div>
+                                </div>
+                                <span class="text-white/50 text-sm font-medium">TY-COMP • Gharda Institute</span>
+                            </div>
+                            
+                            <!-- Timetable Grid -->
+                            <div class="space-y-3">
+                                <!-- Days Header -->
+                                <div class="grid grid-cols-7 gap-3 text-sm">
+                                    <div class="text-white/40 text-center font-semibold py-2">Time</div>
+                                    <div class="text-white/40 text-center font-semibold py-2">Mon</div>
+                                    <div class="text-white/40 text-center font-semibold py-2">Tue</div>
+                                    <div class="text-white/40 text-center font-semibold py-2">Wed</div>
+                                    <div class="text-white/40 text-center font-semibold py-2">Thu</div>
+                                    <div class="text-white/40 text-center font-semibold py-2">Fri</div>
+                                    <div class="text-white/40 text-center font-semibold py-2">Sat</div>
+                                </div>
+                                
+                                <!-- Row 1: 9:00 -->
+                                <div class="grid grid-cols-7 gap-3">
+                                    <div class="text-white/60 text-sm flex items-center justify-center bg-white/5 rounded-lg font-medium">9:00</div>
+                                    <div class="bg-blue-500/30 rounded-xl p-3 text-center hover:bg-blue-500/40 transition-colors">
+                                        <div class="text-white text-sm font-bold">OS</div>
+                                        <div class="text-white/60 text-xs">Dr. Smith</div>
+                                    </div>
+                                    <div class="bg-purple-500/30 rounded-xl p-3 text-center hover:bg-purple-500/40 transition-colors">
+                                        <div class="text-white text-sm font-bold">AI</div>
+                                        <div class="text-white/60 text-xs">Prof. Jones</div>
+                                    </div>
+                                    <div class="bg-emerald-500/30 rounded-xl p-3 text-center hover:bg-emerald-500/40 transition-colors">
+                                        <div class="text-white text-sm font-bold">CN</div>
+                                        <div class="text-white/60 text-xs">Dr. Brown</div>
+                                    </div>
+                                    <div class="bg-rose-500/30 rounded-xl p-3 text-center hover:bg-rose-500/40 transition-colors">
+                                        <div class="text-white text-sm font-bold">DBMS</div>
+                                        <div class="text-white/60 text-xs">Prof. Davis</div>
+                                    </div>
+                                    <div class="bg-cyan-500/30 rounded-xl p-3 text-center hover:bg-cyan-500/40 transition-colors">
+                                        <div class="text-white text-sm font-bold">SE</div>
+                                        <div class="text-white/60 text-xs">Dr. Wilson</div>
+                                    </div>
+                                    <div class="bg-amber-500/30 rounded-xl p-3 text-center hover:bg-amber-500/40 transition-colors">
+                                        <div class="text-white text-sm font-bold">ML</div>
+                                        <div class="text-white/60 text-xs">Prof. Lee</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 2: 10:00 -->
+                                <div class="grid grid-cols-7 gap-3">
+                                    <div class="text-white/60 text-sm flex items-center justify-center bg-white/5 rounded-lg font-medium">10:00</div>
+                                    <div class="bg-purple-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">AI</div>
+                                        <div class="text-white/60 text-xs">Prof. Jones</div>
+                                    </div>
+                                    <div class="bg-emerald-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">CN</div>
+                                        <div class="text-white/60 text-xs">Dr. Brown</div>
+                                    </div>
+                                    <div class="bg-blue-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">OS</div>
+                                        <div class="text-white/60 text-xs">Dr. Smith</div>
+                                    </div>
+                                    <div class="bg-cyan-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">SE</div>
+                                        <div class="text-white/60 text-xs">Dr. Wilson</div>
+                                    </div>
+                                    <div class="bg-rose-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">DBMS</div>
+                                        <div class="text-white/60 text-xs">Prof. Davis</div>
+                                    </div>
+                                    <div class="bg-indigo-500/30 rounded-xl p-3 text-center border border-indigo-400/50 border-dashed">
+                                        <div class="text-indigo-300 text-sm font-bold">LAB</div>
+                                        <div class="text-white/60 text-xs">Batch A</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 3: 11:00 -->
+                                <div class="grid grid-cols-7 gap-3">
+                                    <div class="text-white/60 text-sm flex items-center justify-center bg-white/5 rounded-lg font-medium">11:00</div>
+                                    <div class="bg-emerald-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">CN</div>
+                                        <div class="text-white/60 text-xs">Dr. Brown</div>
+                                    </div>
+                                    <div class="bg-rose-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">DBMS</div>
+                                        <div class="text-white/60 text-xs">Prof. Davis</div>
+                                    </div>
+                                    <div class="bg-purple-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">AI</div>
+                                        <div class="text-white/60 text-xs">Prof. Jones</div>
+                                    </div>
+                                    <div class="bg-amber-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">ML</div>
+                                        <div class="text-white/60 text-xs">Prof. Lee</div>
+                                    </div>
+                                    <div class="bg-blue-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">OS</div>
+                                        <div class="text-white/60 text-xs">Dr. Smith</div>
+                                    </div>
+                                    <div class="bg-indigo-500/30 rounded-xl p-3 text-center border border-indigo-400/50 border-dashed">
+                                        <div class="text-indigo-300 text-sm font-bold">LAB</div>
+                                        <div class="text-white/60 text-xs">Batch B</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Lunch Break -->
+                                <div class="grid grid-cols-7 gap-3">
+                                    <div class="text-white/60 text-sm flex items-center justify-center bg-white/5 rounded-lg font-medium">12:00</div>
+                                    <div class="col-span-6 bg-amber-500/20 rounded-xl p-3 text-center border border-amber-500/30">
+                                        <div class="text-amber-300 text-base font-bold flex items-center justify-center gap-2">
+                                            <i data-lucide="utensils" class="w-4 h-4"></i> LUNCH BREAK
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 4: 1:00 -->
+                                <div class="grid grid-cols-7 gap-3">
+                                    <div class="text-white/60 text-sm flex items-center justify-center bg-white/5 rounded-lg font-medium">1:00</div>
+                                    <div class="bg-rose-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">DBMS</div>
+                                        <div class="text-white/60 text-xs">Prof. Davis</div>
+                                    </div>
+                                    <div class="bg-cyan-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">SE</div>
+                                        <div class="text-white/60 text-xs">Dr. Wilson</div>
+                                    </div>
+                                    <div class="bg-indigo-500/30 rounded-xl p-3 text-center border border-indigo-400/50 border-dashed">
+                                        <div class="text-indigo-300 text-sm font-bold">LAB</div>
+                                        <div class="text-white/60 text-xs">Batch A</div>
+                                    </div>
+                                    <div class="bg-blue-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">OS</div>
+                                        <div class="text-white/60 text-xs">Dr. Smith</div>
+                                    </div>
+                                    <div class="bg-purple-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">AI</div>
+                                        <div class="text-white/60 text-xs">Prof. Jones</div>
+                                    </div>
+                                    <div class="bg-emerald-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">CN</div>
+                                        <div class="text-white/60 text-xs">Dr. Brown</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Row 5: 2:00 -->
+                                <div class="grid grid-cols-7 gap-3">
+                                    <div class="text-white/60 text-sm flex items-center justify-center bg-white/5 rounded-lg font-medium">2:00</div>
+                                    <div class="bg-indigo-500/30 rounded-xl p-3 text-center border border-indigo-400/50 border-dashed">
+                                        <div class="text-indigo-300 text-sm font-bold">LAB</div>
+                                        <div class="text-white/60 text-xs">Batch B</div>
+                                    </div>
+                                    <div class="bg-blue-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">OS</div>
+                                        <div class="text-white/60 text-xs">Dr. Smith</div>
+                                    </div>
+                                    <div class="bg-cyan-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">SE</div>
+                                        <div class="text-white/60 text-xs">Dr. Wilson</div>
+                                    </div>
+                                    <div class="bg-emerald-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">CN</div>
+                                        <div class="text-white/60 text-xs">Dr. Brown</div>
+                                    </div>
+                                    <div class="bg-amber-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">ML</div>
+                                        <div class="text-white/60 text-xs">Prof. Lee</div>
+                                    </div>
+                                    <div class="bg-rose-500/30 rounded-xl p-3 text-center">
+                                        <div class="text-white text-sm font-bold">DBMS</div>
+                                        <div class="text-white/60 text-xs">Prof. Davis</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bottom Info -->
+                            <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-white/70 text-sm">Zero Conflicts Detected</span>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <span class="text-white/50 text-sm flex items-center gap-1">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i> All Teachers Assigned
+                                    </span>
+                                    <span class="text-white/40 text-sm">Generated by Timetable Studio</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Video Tutorial Section -->
+                <section class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
+                            <i data-lucide="play-circle" class="w-7 h-7 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-800">Video Tutorial</h3>
+                            <p class="text-slate-500">Learn how to use Timetable Studio in minutes</p>
+                        </div>
+                    </div>
+                    
+                    <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video shadow-2xl">
+                        <!-- Video Player Placeholder -->
+                        <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 cursor-pointer group" onclick="playTutorialVideo()">
+                            <div class="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 backdrop-blur-sm border border-white/20">
+                                <i data-lucide="play" class="w-8 h-8 text-white ml-1"></i>
+                            </div>
+                            <p class="text-white font-semibold text-lg">Watch Tutorial</p>
+                            <p class="text-slate-400 text-sm mt-1">Click to play</p>
+                        </div>
+                        
+                        <!-- Local Video Player (HTML5) -->
+                        <video 
+                            id="local-video"
+                            class="absolute inset-0 w-full h-full hidden"
+                            controls
+                            poster="">
+                            <source src="videos/tutorial.mp4" type="video/mp4">
+                            <source src="videos/tutorial.webm" type="video/webm">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    
+                    <!-- Video Chapters -->
+                    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer" onclick="seekToTime(0)">
+                            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">01</div>
+                            <div>
+                                <p class="font-semibold text-slate-800 text-sm">Introduction</p>
+                                <p class="text-slate-500 text-xs">0:00 - 0:45</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer" onclick="seekToTime(45)">
+                            <div class="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-bold text-sm">02</div>
+                            <div>
+                                <p class="font-semibold text-slate-800 text-sm">Adding Classes</p>
+                                <p class="text-slate-500 text-xs">0:45 - 2:10</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer" onclick="seekToTime(130)">
+                            <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-sm">03</div>
+                            <div>
+                                <p class="font-semibold text-slate-800 text-sm">Adding Teachers</p>
+                                <p class="text-slate-500 text-xs">2:10 - 3:45</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer" onclick="seekToTime(225)">
+                            <div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-sm">04</div>
+                            <div>
+                                <p class="font-semibold text-slate-800 text-sm">Generate & Export</p>
+                                <p class="text-slate-500 text-xs">3:45 - 5:32</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <section class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                            <i data-lucide="book-open" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-4 text-slate-800">System Guidelines</h3>
+                        <ul class="space-y-4 text-slate-600 font-medium">
+                            <li class="flex items-start gap-3">
+                                <div class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] mt-1">1</div>
+                                <span>Always list subjects exactly as they appear in the teacher's expertise list.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] mt-1">2</div>
+                                <span>Maintain at least a 1:5 Teacher-to-Lecture ratio for the best scheduling results.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] mt-1">3</div>
+                                <span>The 12:00 - 1:00 PM slot is globally reserved for the Lunch Break.</span>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                            <i data-lucide="shield" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-4 text-slate-800">Teacher Workload Guide</h3>
+                        <ul class="space-y-4 text-slate-600 font-medium">
+                            <li class="flex items-start gap-3">
+                                <div class="w-2 h-2 bg-purple-400 rounded-full mt-2.5"></div>
+                                <span>Blue highlighted slots on the teacher schedule indicate active teaching duties.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="w-2 h-2 bg-purple-400 rounded-full mt-2.5"></div>
+                                <span>"Free" slots are reserved for preparation, grading, or administrative work.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="w-2 h-2 bg-purple-400 rounded-full mt-2.5"></div>
+                                <span>The PDF export automatically creates a clean landscape layout for faculty members.</span>
+                            </li>
+                        </ul>
+                    </section>
+                </div>
+
+                <div class="bg-slate-900 p-12 rounded-[3rem] text-white flex items-center justify-between overflow-hidden relative group">
+                    <div class="max-w-xl relative z-10">
+                        <h2 class="text-4xl font-black mb-6">Zero Conflict Policy</h2>
+                        <p class="text-slate-400 text-lg leading-relaxed">Our generator utilizes a constraint-satisfaction heuristic that prevents a single teacher from being scheduled in two places at once, across any class in the system.</p>
+                    </div>
+                    <div class="opacity-10 absolute right-[-10%] top-[-20%] transform rotate-12 transition-transform duration-1000 group-hover:rotate-0">
+                        <i data-lucide="check-shield" class="w-96 h-96"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class View Page -->
+            <div id="page-class-view" class="page-content hidden space-y-10">
+                <header class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-4xl font-black tracking-tight text-slate-900">Academic Master Plan</h1>
+                        <p class="text-slate-500 mt-2 text-lg font-medium">Full week visualization for classes.</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <select id="select-class" onchange="renderClassTimetable()" class="px-6 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none font-bold text-slate-700"></select>
+                        <button onclick="exportPDF('Class')" class="px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-2xl transition-all flex items-center gap-3 active:scale-95">
+                            <i data-lucide="file-down" class="w-5 h-5"></i> Export PDF
+                        </button>
+                    </div>
+                </header>
+
+                <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden glass">
+                    <div class="overflow-x-auto">
+                        <table id="table-class" class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 border-b-2 border-slate-200">
+                                    <th class="p-6 font-black text-[10px] uppercase tracking-widest text-slate-400 border-r border-slate-200 w-44">Time Sequence</th>
+                                    <th class="p-6 font-black text-slate-700 border-r border-slate-100">Monday</th>
+                                    <th class="p-6 font-black text-slate-700 border-r border-slate-100">Tuesday</th>
+                                    <th class="p-6 font-black text-slate-700 border-r border-slate-100">Wednesday</th>
+                                    <th class="p-6 font-black text-slate-700 border-r border-slate-100">Thursday</th>
+                                    <th class="p-6 font-black text-slate-700 border-r border-slate-100">Friday</th>
+                                    <th class="p-6 font-black text-slate-700">Saturday</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-class" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teacher View Page -->
+            <div id="page-teacher-view" class="page-content hidden space-y-10">
+                <header class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-4xl font-black tracking-tight text-slate-900">Faculty Resource Matrix</h1>
+                        <p class="text-slate-500 mt-2 text-lg font-medium">Real-time workload tracking for educators.</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <select id="select-teacher" onchange="renderTeacherTimetable()" class="px-6 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none font-bold text-slate-700"></select>
+                        <button onclick="exportPDF('Teacher')" class="px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-2xl transition-all flex items-center gap-3 active:scale-95">
+                            <i data-lucide="file-text" class="w-5 h-5"></i> Save Schedule
+                        </button>
+                    </div>
+                </header>
+
+                <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden glass">
+                    <div class="overflow-x-auto">
+                        <table id="table-teacher" class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 border-b border-slate-100">
+                                    <th class="p-6 font-black text-[10px] uppercase tracking-widest text-slate-400 border-r border-slate-100 w-44">Time Sequence</th>
+                                    <th class="p-6 font-black text-slate-700">Monday</th>
+                                    <th class="p-6 font-black text-slate-700">Tuesday</th>
+                                    <th class="p-6 font-black text-slate-700">Wednesday</th>
+                                    <th class="p-6 font-black text-slate-700">Thursday</th>
+                                    <th class="p-6 font-black text-slate-700">Friday</th>
+                                    <th class="p-6 font-black text-slate-700">Saturday</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-teacher" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch View Page -->
+            <div id="page-batch-view" class="page-content hidden space-y-10">
+                <header class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-4xl font-black tracking-tight text-slate-900">Batch Schedule Matrix</h1>
+                        <p class="text-slate-500 mt-2 text-lg font-medium">View practical schedules for all batches by day.</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <select id="select-day-batch" onchange="renderBatchTimetable()" class="px-6 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none font-bold text-slate-700">
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                        </select>
+                        <button onclick="exportPDF('Batch')" class="px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-2xl transition-all flex items-center gap-3 active:scale-95">
+                            <i data-lucide="file-down" class="w-5 h-5"></i> Export PDF
+                        </button>
+                    </div>
+                </header>
+
+                <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden glass">
+                    <div class="overflow-x-auto">
+                        <table id="table-batch" class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 border-b border-slate-100">
+                                    <th class="p-6 font-black text-[10px] uppercase tracking-widest text-slate-400 border-r border-slate-100 w-44">Class / Batch</th>
+                                    <th class="p-6 font-black text-slate-700">10:00-11:00</th>
+                                    <th class="p-6 font-black text-slate-700">11:00-12:00</th>
+                                    <th class="p-6 font-black text-slate-700">13:00-14:00</th>
+                                    <th class="p-6 font-black text-slate-700">14:00-15:00</th>
+                                    <th class="p-6 font-black text-slate-700">15:00-16:00</th>
+                                    <th class="p-6 font-black text-slate-700">16:00-17:00</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-batch" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Us Page -->
+            <div id="page-about" class="page-content hidden space-y-12">
+                <header>
+                    <h1 class="text-4xl font-black tracking-tight text-slate-900">About Us</h1>
+                    <p class="text-slate-500 mt-3 text-lg font-medium">Learn more about our mission and team.</p>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                            <i data-lucide="target" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-4 text-slate-800">Our Mission</h3>
+                        <p class="text-slate-600 leading-relaxed">
+                            We aim to simplify academic scheduling through intelligent automation. Our platform eliminates 
+                            the complexity of timetable creation, ensuring zero conflicts while maximizing resource utilization 
+                            for educational institutions worldwide.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                            <i data-lucide="zap" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-4 text-slate-800">Our Technology</h3>
+                        <p class="text-slate-600 leading-relaxed">
+                            Built with advanced constraint-satisfaction algorithms, our system processes over 1,200 constraints 
+                            per second. We combine modern web technologies with proven optimization techniques to deliver 
+                            reliable, conflict-free schedules every time.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-slate-900 to-slate-800 p-12 rounded-[2.5rem] text-white">
+                    <h2 class="text-3xl font-black mb-8 text-center">Key Features</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="shield-check" class="w-8 h-8"></i>
+                            </div>
+                            <h4 class="font-bold text-lg mb-2">Zero Conflicts</h4>
+                            <p class="text-slate-400 text-sm">Guaranteed teacher and room conflict resolution</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="clock" class="w-8 h-8"></i>
+                            </div>
+                            <h4 class="font-bold text-lg mb-2">Smart Scheduling</h4>
+                            <p class="text-slate-400 text-sm">Lunch breaks and project days handled automatically</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="download" class="w-8 h-8"></i>
+                            </div>
+                            <h4 class="font-bold text-lg mb-2">Easy Export</h4>
+                            <p class="text-slate-400 text-sm">Professional PDF exports for all stakeholders</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass p-10 rounded-[2.5rem] text-center">
+                    <h3 class="text-2xl font-black mb-4 gradient-text">Contact Us</h3>
+                    <p class="text-slate-600 mb-6">Have questions or feedback? We'd love to hear from you.</p>
+                    
+                    <!-- Contact Form -->
+                    <form id="contact-form" onsubmit="handleContactSubmit(event)" class="max-w-md mx-auto space-y-4 text-left">
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Your Name</label>
+                            <input type="text" id="contact-name" required class="w-full p-4 bg-white/50 border border-white/30 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-semibold" placeholder="John Doe">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Your Email</label>
+                            <input type="email" id="contact-email" required class="w-full p-4 bg-white/50 border border-white/30 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-semibold" placeholder="john@example.com">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Subject</label>
+                            <input type="text" id="contact-subject" class="w-full p-4 bg-white/50 border border-white/30 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-semibold" placeholder="How can we help?">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Message</label>
+                            <textarea id="contact-message" required rows="4" class="w-full p-4 bg-white/50 border border-white/30 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-semibold resize-none" placeholder="Tell us more..."></textarea>
+                        </div>
+                        <button type="submit" id="contact-submit-btn" class="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-2xl shadow-xl shadow-purple-500/30 transition-all active:scale-95 btn-animated flex items-center justify-center gap-2">
+                            <i data-lucide="send" class="w-5 h-5"></i> Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scrolling Features Marquee -->
+    <div class="fixed bottom-0 left-72 right-0 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 text-white py-3 overflow-hidden z-50 border-t border-white/10">
+        <div class="marquee-wrapper">
+            <div class="animate-scroll-right-x whitespace-nowrap flex items-center gap-8 h-10" id="features-marquee">
+                <!-- Feature items will be duplicated for seamless loop -->
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-cyan-400"></i>
+                    <span class="font-medium">Zero Conflict Scheduling</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="users" class="w-5 h-5 text-pink-400"></i>
+                    <span class="font-medium">Smart Teacher Allocation</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="clock" class="w-5 h-5 text-yellow-400"></i>
+                    <span class="font-medium">Auto Lunch Break Handling</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="file-down" class="w-5 h-5 text-green-400"></i>
+                    <span class="font-medium">PDF Export</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="zap" class="w-5 h-5 text-purple-400"></i>
+                    <span class="font-medium">AI-Powered Optimization</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i>
+                    <span class="font-medium">Project Day Support</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="layers" class="w-5 h-5 text-orange-400"></i>
+                    <span class="font-medium">Multi-Class Management</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+                    <span class="font-medium">90% Conflict Free</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i>
+                    <span class="font-medium">One-Click Generation</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="smartphone" class="w-5 h-5 text-rose-400"></i>
+                    <span class="font-medium">Mobile Responsive</span>
+                </div>
+                <!-- Duplicate for seamless loop -->
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-cyan-400"></i>
+                    <span class="font-medium">Zero Conflict Scheduling</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="users" class="w-5 h-5 text-pink-400"></i>
+                    <span class="font-medium">Smart Teacher Allocation</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="clock" class="w-5 h-5 text-yellow-400"></i>
+                    <span class="font-medium">Auto Lunch Break Handling</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="file-down" class="w-5 h-5 text-green-400"></i>
+                    <span class="font-medium">PDF Export</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="zap" class="w-5 h-5 text-purple-400"></i>
+                    <span class="font-medium">AI-Powered Optimization</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i>
+                    <span class="font-medium">Project Day Support</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="layers" class="w-5 h-5 text-orange-400"></i>
+                    <span class="font-medium">Multi-Class Management</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+                    <span class="font-medium">90% Conflict Free</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i>
+                    <span class="font-medium">One-Click Generation</span>
+                </div>
+                <div class="flex items-center gap-2 px-4">
+                    <i data-lucide="smartphone" class="w-5 h-5 text-rose-400"></i>
+                    <span class="font-medium">Mobile Responsive</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Video Tutorial Functions ---
+        const VIDEO_PATH = 'videos/tutorial.mp4';
+        
+        function playTutorialVideo() {
+            const placeholder = document.getElementById('video-placeholder');
+            const video = document.getElementById('local-video');
+            
+            placeholder.classList.add('hidden');
+            video.classList.remove('hidden');
+            video.play();
+        }
+        
+        function seekToTime(seconds) {
+            const placeholder = document.getElementById('video-placeholder');
+            const video = document.getElementById('local-video');
+            
+            placeholder.classList.add('hidden');
+            video.classList.remove('hidden');
+            video.currentTime = seconds;
+            video.play();
+        }
+
+        // --- State Management ---
+        let state = {
+            currentPage: 'dashboard',
+            formClasses: [],
+            formTeachers: [],
+            collegeName: 'Gharda Institute of Technology',
+            includeProject: false,
+            timetableData: null,
+            classes: [],
+            teachers: [],
+            auth: {
+                mode: 'login',
+                user: null
+            }
+        };
+
+        // --- Auth Functions ---
+        function toggleAuthMode() {
+            state.auth.mode = state.auth.mode === 'login' ? 'register' : 'login';
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const btnText = document.getElementById('auth-btn-text');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            
+            if (state.auth.mode === 'register') {
+                title.innerText = 'Create Account';
+                subtitle.innerText = 'Start your professional scheduling journey';
+                btnText.innerText = 'Register Studio Account';
+                toggleBtn.innerHTML = 'Already have an account? <span class="text-indigo-600">Sign In</span>';
+            } else {
+                title.innerText = 'Welcome Back';
+                subtitle.innerText = 'Please sign in to access your Studio';
+                btnText.innerText = 'Sign In to Studio';
+                toggleBtn.innerHTML = 'New here? <span class="text-indigo-600">Create a Studio Account</span>';
+            }
+        }
+
+        async function handleAuth() {
+            const username = document.getElementById('auth-username').value;
+            const password = document.getElementById('auth-password').value;
+            
+            if (!username || !password) {
+                showAlert('Username and password are required', 'error');
+                return;
+            }
+
+            const endpoint = state.auth.mode === 'login' ? '/api/login' : '/api/register';
+            const btn = document.getElementById('auth-submit-btn');
+            const btnText = document.getElementById('auth-btn-text');
+            const oldText = btnText.innerText;
+            
+            btnText.innerText = 'Processing...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    if (state.auth.mode === 'register') {
+                        showAlert(data.message, 'success');
+                        toggleAuthMode();
+                    } else {
+                        state.auth.user = data.username;
+                        document.getElementById('auth-overlay').classList.add('authenticated');
+                        showAlert(data.message, 'success');
+                        setTimeout(() => {
+                            document.getElementById('auth-overlay').remove();
+                        }, 1000);
+                    }
+                } else {
+                    showAlert(data.error || 'Authentication failed', 'error');
+                }
+            } catch (err) {
+                showAlert('Network error. Is the server running?', 'error');
+            } finally {
+                btnText.innerText = oldText;
+                btn.disabled = false;
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/me');
+                const data = await res.json();
+                if (data.username) {
+                    state.auth.user = data.username;
+                    document.getElementById('auth-overlay').classList.add('authenticated');
+                    setTimeout(() => {
+                        document.getElementById('auth-overlay').remove();
+                    }, 800);
+                }
+            } catch (err) {}
+        }
+
+        const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const TIMESLOTS = ["10:00 - 11:00", "11:00 - 12:00", "12:00 - 13:00", "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00"];
+
+        // --- Initialization ---
+        window.onload = () => {
+            checkAuth();
+            loadFromStorage();
+            updateUI();
+            lucide.createIcons();
+            showAdBanner();
+        };
+
+        function saveToStorage() {
+            localStorage.setItem('tt_pro_state', JSON.stringify({
+                formClasses: state.formClasses,
+                formTeachers: state.formTeachers,
+                collegeName: state.collegeName,
+                includeProject: state.includeProject
+            }));
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('tt_pro_state');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state = { ...state, ...parsed };
+                document.getElementById('setup-college-name').value = state.collegeName;
+                document.getElementById('setup-include-project').checked = state.includeProject;
+            }
+        }
+
+        // --- Advertisement Banner ---
+        const adMessages = [
+            { text: "New Feature: Auto-generate schedules with AI-powered optimization!", icon: "zap" },
+            { text: "Join 10,000+ schools using Timetable Studio - Start free today!", icon: "users" },
+            { text: "Export to PDF, Excel & Google Calendar - All formats supported!", icon: "file-down" },
+            { text: "Zero Conflict Guarantee - Smart scheduling algorithm!", icon: "shield-check" },
+            { text: "Mobile Responsive - Use on any device!", icon: "smartphone" }
+        ];
+        
+        let currentAdIndex = 0;
+        let adRotationInterval;
+        
+        function rotateAds() {
+            const adText = document.getElementById('ad-text');
+            const adContent = document.getElementById('ad-content');
+            
+            // Fade out
+            adContent.style.opacity = '0';
+            adContent.style.transform = 'translateY(-10px)';
+            adContent.style.transition = 'all 0.3s ease';
+            
+            setTimeout(() => {
+                currentAdIndex = (currentAdIndex + 1) % adMessages.length;
+                const ad = adMessages[currentAdIndex];
+                
+                adContent.innerHTML = `
+                    <i data-lucide="${ad.icon}" class="w-4 h-4"></i>
+                    <span id="ad-text">${ad.text}</span>
+                `;
+                lucide.createIcons();
+                
+                // Fade in
+                adContent.style.opacity = '1';
+                adContent.style.transform = 'translateY(0)';
+            }, 300);
+        }
+        
+        function startAdRotation() {
+            adRotationInterval = setInterval(rotateAds, 5000); // Change every 5 seconds
+        }
+        
+        function closeAdBanner() {
+            const banner = document.getElementById('ad-banner');
+            banner.style.transform = 'translateY(-100%)';
+            banner.style.transition = 'transform 0.3s ease';
+            clearInterval(adRotationInterval);
+            
+            // Save preference
+            localStorage.setItem('adBannerClosed', 'true');
+            
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 300);
+        }
+        
+        function showAdBanner() {
+            const banner = document.getElementById('ad-banner');
+            const wasClosed = localStorage.getItem('adBannerClosed');
+            
+            if (wasClosed !== 'true') {
+                banner.style.display = 'block';
+                startAdRotation();
+            }
+        }
+
+        // --- Contact Form Handling ---
+        async function handleContactSubmit(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('contact-name').value;
+            const email = document.getElementById('contact-email').value;
+            const subject = document.getElementById('contact-subject').value;
+            const message = document.getElementById('contact-message').value;
+            const btn = document.getElementById('contact-submit-btn');
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Sending...';
+            lucide.createIcons();
+            
+            try {
+                const res = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, subject, message })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    showAlert(data.message, 'success');
+                    document.getElementById('contact-form').reset();
+                } else {
+                    showAlert(data.error || 'Failed to send message', 'error');
+                }
+            } catch (err) {
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Send Message';
+                lucide.createIcons();
+            }
+        }
+
+        function showPage(pageId) {
+            state.currentPage = pageId;
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            
+            // Update sidebar nav
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('sidebar-active'));
+            const sidebarBtn = document.getElementById(`nav-${pageId}`);
+            if (sidebarBtn) sidebarBtn.classList.add('sidebar-active');
+            
+            // Update top nav
+            document.querySelectorAll('[id^="top-nav-"]').forEach(btn => {
+                btn.classList.remove('nav-active', 'bg-white', 'shadow-lg');
+                btn.classList.add('text-slate-700');
+            });
+            const topNavBtn = document.getElementById(`top-nav-${pageId}`);
+            if (topNavBtn) {
+                topNavBtn.classList.remove('text-slate-700');
+                topNavBtn.classList.add('nav-active');
+            }
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            updateUI();
+        }
+
+        // --- Data Handling ---
+        function updateUI() {
+            document.getElementById('college-name-nav').innerText = state.collegeName;
+            document.getElementById('stat-classes').innerText = state.formClasses.length;
+            document.getElementById('stat-teachers').innerText = state.formTeachers.length;
+            document.getElementById('badge-classes').innerText = state.formClasses.length;
+            document.getElementById('badge-teachers').innerText = state.formTeachers.length;
+            
+            const statusH3 = document.getElementById('stat-status');
+            const statusIcon = document.getElementById('stat-icon');
+            
+            if (state.timetableData) {
+                statusH3.innerText = 'Synchronized';
+                statusH3.classList.remove('text-slate-300');
+                statusH3.classList.add('text-emerald-600');
+                statusIcon.classList.remove('text-slate-300', 'bg-slate-50');
+                statusIcon.classList.add('text-emerald-600', 'bg-emerald-50');
+                document.getElementById('nav-tables-section').classList.remove('hidden');
+            }
+
+            renderPreviews();
+            lucide.createIcons();
+        }
+
+        function renderPreviews() {
+            const clsList = document.getElementById('list-classes');
+            clsList.innerHTML = state.formClasses.map((c, i) => `
+                <div class="bg-white border border-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm group hover:border-emerald-200 hover:bg-emerald-50 transition-all">
+                    <span class="flex-1">${c.name}</span>
+                    <button onclick="editItem('class', ${i})" class="text-slate-300 hover:text-blue-500 group-hover:text-blue-400 transition-colors p-1" title="Edit">
+                        <i data-lucide="pencil" class="w-3 h-3"></i>
+                    </button>
+                    <button onclick="removeItem('class', ${i})" class="text-slate-300 hover:text-red-500 group-hover:text-red-400 transition-colors p-1" title="Delete">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            const tList = document.getElementById('list-teachers');
+            tList.innerHTML = state.formTeachers.map((t, i) => `
+                <div class="bg-white border border-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm group hover:border-purple-200 hover:bg-purple-50 transition-all">
+                    <span class="flex-1">${t.name}</span>
+                    <button onclick="editItem('teacher', ${i})" class="text-slate-300 hover:text-blue-500 group-hover:text-blue-400 transition-colors p-1" title="Edit">
+                        <i data-lucide="pencil" class="w-3 h-3"></i>
+                    </button>
+                    <button onclick="removeItem('teacher', ${i})" class="text-slate-300 hover:text-red-500 group-hover:text-red-400 transition-colors p-1" title="Delete">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Current edit index tracking
+        let currentEditIndex = null;
+        let currentEditType = null;
+
+        function editItem(type, index) {
+            currentEditType = type;
+            currentEditIndex = index;
+            
+            if (type === 'class') {
+                const item = state.formClasses[index];
+                document.getElementById('class-name').value = item.name;
+                document.getElementById('class-lectures').value = item.lectures.join(', ');
+                document.getElementById('class-practicals').value = item.practicals.join(', ');
+                document.getElementById('class-batches').value = item.batches.join(', ');
+                
+                // Change button to update mode
+                const btn = document.querySelector('button[onclick="addClass()"]');
+                btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Update Class';
+                btn.onclick = updateClass;
+                btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                
+                // Add cancel button
+                const cancelBtn = document.createElement('button');
+                cancelBtn.id = 'cancel-class-edit';
+                cancelBtn.className = 'w-full py-4 bg-slate-400 hover:bg-slate-500 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 mt-3';
+                cancelBtn.innerHTML = '<i data-lucide="x" class="w-4 h-4 inline mr-2"></i> Cancel';
+                cancelBtn.onclick = cancelEdit;
+                btn.parentNode.appendChild(cancelBtn);
+                
+                // Highlight the input area
+                document.getElementById('class-name').focus();
+                document.getElementById('class-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+            } else if (type === 'teacher') {
+                const item = state.formTeachers[index];
+                document.getElementById('teacher-short').value = item.name;
+                document.getElementById('teacher-full').value = item.fullName;
+                document.getElementById('teacher-subjects').value = item.subjects.join(', ');
+                
+                // Change button to update mode
+                const btn = document.querySelector('button[onclick="addTeacher()"]');
+                btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Update Faculty';
+                btn.onclick = updateTeacher;
+                btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                
+                // Add cancel button
+                const cancelBtn = document.createElement('button');
+                cancelBtn.id = 'cancel-teacher-edit';
+                cancelBtn.className = 'w-full py-4 bg-slate-400 hover:bg-slate-500 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 mt-3';
+                cancelBtn.innerHTML = '<i data-lucide="x" class="w-4 h-4 inline mr-2"></i> Cancel';
+                cancelBtn.onclick = cancelEdit;
+                btn.parentNode.appendChild(cancelBtn);
+                
+                // Highlight the input area
+                document.getElementById('teacher-short').focus();
+                document.getElementById('teacher-short').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            lucide.createIcons();
+        }
+
+        function updateClass() {
+            if (currentEditIndex === null || currentEditType !== 'class') return;
+            
+            const name = document.getElementById('class-name').value;
+            const lectures = document.getElementById('class-lectures').value;
+            const practicals = document.getElementById('class-practicals').value;
+            const batches = document.getElementById('class-batches').value;
+
+            if (name) {
+                state.formClasses[currentEditIndex] = {
+                    name,
+                    lectures: lectures.split(',').map(s => s.trim()).filter(s => s),
+                    practicals: practicals.split(',').map(s => s.trim()).filter(s => s),
+                    batches: batches.split(',').map(s => s.trim()).filter(s => s)
+                };
+                
+                // Reset form
+                document.getElementById('class-name').value = '';
+                document.getElementById('class-lectures').value = '';
+                document.getElementById('class-practicals').value = '';
+                document.getElementById('class-batches').value = '';
+                
+                // Reset button
+                resetClassButton();
+                
+                saveToStorage();
+                updateUI();
+                showAlert(`Class ${name} updated successfully.`, 'success');
+            }
+        }
+
+        function updateTeacher() {
+            if (currentEditIndex === null || currentEditType !== 'teacher') return;
+            
+            const short = document.getElementById('teacher-short').value;
+            const full = document.getElementById('teacher-full').value;
+            const subjects = document.getElementById('teacher-subjects').value;
+
+            if (short) {
+                state.formTeachers[currentEditIndex] = {
+                    name: short,
+                    fullName: full || short,
+                    subjects: subjects.split(',').map(s => s.trim()).filter(s => s)
+                };
+                
+                // Reset form
+                document.getElementById('teacher-short').value = '';
+                document.getElementById('teacher-full').value = '';
+                document.getElementById('teacher-subjects').value = '';
+                
+                // Reset button
+                resetTeacherButton();
+                
+                saveToStorage();
+                updateUI();
+                showAlert(`Teacher ${short} updated successfully.`, 'success');
+            }
+        }
+
+        function cancelEdit() {
+            if (currentEditType === 'class') {
+                document.getElementById('class-name').value = '';
+                document.getElementById('class-lectures').value = '';
+                document.getElementById('class-practicals').value = '';
+                document.getElementById('class-batches').value = '';
+                resetClassButton();
+            } else if (currentEditType === 'teacher') {
+                document.getElementById('teacher-short').value = '';
+                document.getElementById('teacher-full').value = '';
+                document.getElementById('teacher-subjects').value = '';
+                resetTeacherButton();
+            }
+            currentEditIndex = null;
+            currentEditType = null;
+        }
+
+        function resetClassButton() {
+            const btn = document.querySelector('button[onclick="updateClass()"]') || document.querySelector('button[onclick="addClass()"]');
+            if (btn) {
+                btn.innerHTML = 'Add to Infrastructure';
+                btn.onclick = addClass;
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            }
+            const cancelBtn = document.getElementById('cancel-class-edit');
+            if (cancelBtn) cancelBtn.remove();
+        }
+
+        function resetTeacherButton() {
+            const btn = document.querySelector('button[onclick="updateTeacher()"]') || document.querySelector('button[onclick="addTeacher()"]');
+            if (btn) {
+                btn.innerHTML = 'Enroll Faculty';
+                btn.onclick = addTeacher;
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+            }
+            const cancelBtn = document.getElementById('cancel-teacher-edit');
+            if (cancelBtn) cancelBtn.remove();
+        }
+
+        function addClass() {
+            const name = document.getElementById('class-name').value;
+            const lectures = document.getElementById('class-lectures').value;
+            const practicals = document.getElementById('class-practicals').value;
+            const batches = document.getElementById('class-batches').value;
+
+            if (name) {
+                state.formClasses.push({
+                    name,
+                    lectures: lectures.split(',').map(s => s.trim()).filter(s => s),
+                    practicals: practicals.split(',').map(s => s.trim()).filter(s => s),
+                    batches: batches.split(',').map(s => s.trim()).filter(s => s)
+                });
+                document.getElementById('class-name').value = '';
+                document.getElementById('class-lectures').value = '';
+                document.getElementById('class-practicals').value = '';
+                document.getElementById('class-batches').value = '';
+                saveToStorage();
+                updateUI();
+                showAlert(`Class ${name} registered successfully.`, 'success');
+            }
+        }
+
+        function addTeacher() {
+            const short = document.getElementById('teacher-short').value;
+            const full = document.getElementById('teacher-full').value;
+            const subjects = document.getElementById('teacher-subjects').value;
+
+            if (short) {
+                state.formTeachers.push({
+                    name: short,
+                    fullName: full || short,
+                    subjects: subjects.split(',').map(s => s.trim()).filter(s => s)
+                });
+                document.getElementById('teacher-short').value = '';
+                document.getElementById('teacher-full').value = '';
+                document.getElementById('teacher-subjects').value = '';
+                saveToStorage();
+                updateUI();
+                showAlert(`Faculty member ${short} enrolled successfully.`, 'success');
+            }
+        }
+
+        function removeItem(type, idx) {
+            if (type === 'class') state.formClasses.splice(idx, 1);
+            else state.formTeachers.splice(idx, 1);
+            saveToStorage();
+            updateUI();
+        }
+
+        function resetAllData() {
+            if(confirm('Are you sure you want to wipe all system data? This cannot be undone.')) {
+                state.formClasses = [];
+                state.formTeachers = [];
+                state.timetableData = null;
+                saveToStorage();
+                location.reload();
+            }
+        }
+
+        function loadSampleData() {
+            state.formClasses = [
+                { name: 'TY-COMP', lectures: ['AI', 'OS', 'CN', 'DS'], practicals: ['AI Lab', 'OS Lab'], batches: ['A', 'B'] },
+                { name: 'SY-COMP', lectures: ['M3', 'DSA', 'COA', 'MP'], practicals: ['DSA Lab', 'MP Lab'], batches: ['C', 'D'] }
+            ];
+            state.formTeachers = [
+                { name: 'PK', fullName: 'Dr. Pankaj K.', subjects: ['AI', 'OS', 'AI Lab'] },
+                { name: 'SJ', fullName: 'Prof. Sneha J.', subjects: ['CN', 'DS', 'OS Lab'] },
+                { name: 'AM', fullName: 'Mr. Amit M.', subjects: ['M3', 'DSA', 'DSA Lab'] },
+                { name: 'RK', fullName: 'Mrs. Ritu K.', subjects: ['COA', 'MP', 'MP Lab'] }
+            ];
+            state.collegeName = 'Imperial Institute of Technology';
+            saveToStorage();
+            updateUI();
+            showAlert('Sample dataset loaded successfully.', 'info');
+        }
+
+        // --- API & Timetable Logic ---
+        async function generateTimetable() {
+            state.collegeName = document.getElementById('setup-college-name').value || 'Academic Studio';
+            state.includeProject = document.getElementById('setup-include-project').checked;
+            saveToStorage();
+
+            if (state.formClasses.length === 0) {
+                showAlert('Ecosystem is empty. Add classes in Configuration first.', 'error');
+                showPage('setup');
+                return;
+            }
+
+            showAlert('Orchestrating schedule constraints...', 'info');
+
+            try {
+                const bulkRes = await fetch('/api/bulk-add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bulkClasses: JSON.stringify(state.formClasses),
+                        bulkTeachers: JSON.stringify(state.formTeachers)
+                    })
+                });
+                if (!bulkRes.ok) throw new Error('API Handshake Failed');
+
+                const ttRes = await fetch(`/api/timetable?project=${state.includeProject}`);
+                const data = await ttRes.json();
+                
+                if (data.error) throw new Error(data.error);
+
+                state.timetableData = data;
+                state.classes = Object.keys(data.timetable);
+                state.teachers = data.teachers;
+
+                const classSelect = document.getElementById('select-class');
+                classSelect.innerHTML = state.classes.map(c => `<option value="${c}">${c}</option>`).join('');
+                
+                const teacherSelect = document.getElementById('select-teacher');
+                teacherSelect.innerHTML = state.teachers.map(t => `<option value="${t.name}">${t.fullName}</option>`).join('');
+
+                showAlert('Schedule generated with zero conflicts.', 'success');
+                showPage('class-view');
+                renderClassTimetable();
+                renderTeacherTimetable();
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
+
+        function format12h(range) {
+            const to12 = (hm) => {
+                const [hStr, mStr] = hm.split(':');
+                let h = parseInt(hStr, 10);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12 || 12;
+                return `${h}:${mStr} ${ampm}`;
+            };
+            return range.includes(' - ') ? range.split(' - ').map(to12).join(' - ') : to12(range);
+        }
+
+        function renderClassTimetable() {
+            const cls = document.getElementById('select-class').value;
+            if (!cls || !state.timetableData) return;
+
+            const tbody = document.getElementById('tbody-class');
+            tbody.innerHTML = '';
+
+            TIMESLOTS.forEach((slot, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'group transition-all hover:bg-slate-50/50';
+                
+                const tdTime = document.createElement('td');
+                tdTime.className = 'p-6 border-r border-slate-100 font-extrabold text-slate-400 bg-slate-50/30 text-xs';
+                tdTime.innerText = format12h(slot);
+                tr.appendChild(tdTime);
+
+                DAYS.forEach(day => {
+                    const val = state.timetableData.timetable[cls][day][slot];
+                    
+                    if (isProjectDay(cls, day)) {
+                        if (idx === 0) {
+                            const td = document.createElement('td');
+                            td.rowSpan = TIMESLOTS.length;
+                            td.className = 'project-cell text-center font-black tracking-[0.3em] text-sm uppercase vertical-text border border-red-200';
+                            td.innerHTML = '<div class="flex flex-col items-center justify-center gap-4"><i data-lucide="flask-conical" class="w-8 h-8"></i>PROJECT DAY</div>';
+                            tr.appendChild(td);
+                        }
+                        return;
+                    }
+
+                    const td = document.createElement('td');
+                    td.className = 'p-3 min-w-[200px] transition-all relative border border-slate-200';
+                    
+                    if (val === 'Lunch Break') {
+                        td.className += ' lunch-cell text-center font-bold text-[10px] uppercase tracking-widest opacity-60';
+                        td.innerText = 'Intermission';
+                    } else if (val === 'T&P Session') {
+                        td.className += ' tp-cell text-center font-bold text-[11px] uppercase tracking-wider bg-orange-50';
+                        td.innerHTML = '<div class="flex flex-col items-center justify-center gap-1"><i data-lucide="briefcase" class="w-4 h-4 text-orange-500"></i><span class="text-orange-600">T&P Session</span></div>';
+                    } else if (val === 'Library') {
+                        td.className += ' library-cell text-center font-bold text-[11px] uppercase tracking-wider bg-green-50';
+                        td.innerHTML = '<div class="flex flex-col items-center justify-center gap-1"><i data-lucide="book-open" class="w-4 h-4 text-green-500"></i><span class="text-green-600">Library</span></div>';
+                    } else if (val && val.startsWith('Experiential:')) {
+                        td.className += ' bg-indigo-50 border-l-4 border-l-indigo-400 text-center';
+                        const match = val.match(/Experiential:\s*(.+?)\s*\((.+?)\)/);
+                        if (match) {
+                            td.innerHTML = `<div class="font-bold text-indigo-800 text-xs">Experiential</div><div class="text-[10px] text-indigo-600">${match[1]}</div>`;
+                        } else {
+                            td.innerHTML = '<div class="font-bold text-indigo-800 text-xs">Experiential</div>';
+                        }
+                    } else if (val === 'MERGED') {
+                        return;
+                    } else {
+                        const nextSlot = TIMESLOTS[idx+1];
+                        if (nextSlot && state.timetableData.timetable[cls][day][nextSlot] === 'MERGED') {
+                            td.rowSpan = 2;
+                            td.className += ' border-l-4 border-l-blue-500 bg-blue-50/20';
+                        }
+                        
+                        if (val && val.includes('/')) {
+                            // Multiple batches - split and display each on new line
+                            const batches = val.split(' / ');
+                            let html = '<div class="space-y-2">';
+                            batches.forEach(batch => {
+                                const match = batch.match(/(B\d+):\s*(.+?)\s*\((.+?)\)\s*in\s*(.+)/);
+                                if (match) {
+                                    const [, batchNum, subj, teacher, lab] = match;
+                                    html += `
+                                        <div class="bg-blue-50 rounded-lg p-2 border-l-3 border-blue-400">
+                                            <div class="flex items-center gap-2">
+                                                <span class="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">${batchNum}</span>
+                                                <span class="font-black text-slate-800 text-xs">${subj}</span>
+                                            </div>
+                                            <div class="text-[9px] text-slate-500 mt-1 ml-7">${teacher} • ${lab}</div>
+                                        </div>
+                                    `;
+                                } else {
+                                    html += `<div class="text-xs font-bold text-slate-700">${batch}</div>`;
+                                }
+                            });
+                            html += '</div>';
+                            td.innerHTML = html;
+                        } else if (val) {
+                            const [subj, info] = val.split(' (');
+                            td.innerHTML = `
+                                <div class="font-black text-slate-800 text-sm">${subj}</div>
+                                <div class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">${info ? info.replace(')', '') : ''}</div>
+                            `;
+                        } else {
+                            td.innerHTML = '<div class="w-2 h-2 bg-slate-100 rounded-full mx-auto"></div>';
+                        }
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function isProjectDay(cls, day) {
+            if (!state.timetableData || !state.timetableData.timetable[cls]) return false;
+            const slots = state.timetableData.timetable[cls][day];
+            // Check if any slot is "PROJECT DAY"
+            return Object.values(slots).some(v => v === "PROJECT DAY");
+        }
+
+        function renderTeacherTimetable() {
+            const tName = document.getElementById('select-teacher').value;
+            if (!tName || !state.timetableData) return;
+
+            const tbody = document.getElementById('tbody-teacher');
+            tbody.innerHTML = '';
+
+            TIMESLOTS.forEach(slot => {
+                const tr = document.createElement('tr');
+                tr.className = 'group transition-all hover:bg-slate-50/50';
+                
+                const tdTime = document.createElement('td');
+                tdTime.className = 'p-6 border-r border-slate-100 font-extrabold text-slate-400 bg-slate-50/30 text-xs';
+                tdTime.innerText = format12h(slot);
+                tr.appendChild(tdTime);
+
+                DAYS.forEach(day => {
+                    let found = [];
+                    let isLunch = false;
+                    let isTp = false;
+                    let isLibrary = false;
+
+                    Object.entries(state.timetableData.timetable).forEach(([cls, days]) => {
+                        const val = days[day][slot];
+                        if (val === 'Lunch Break') isLunch = true;
+                        if (val === 'T&P Session') isTp = true;
+                        if (val === 'Library') isLibrary = true;
+                        if (val === 'PROJECT DAY') found.push('<div class="font-black text-rose-600 text-xs uppercase tracking-widest">Project Supervision</div>');
+                        
+                        // Check if this teacher is assigned in this slot
+                        // Format: "A: ADS (TBD) in Lab(A) / B: DC (ABC) in Lab(B)" or "Subject (Teacher)"
+                        if (val && val.includes(`(${tName})`)) {
+                            // Extract the subject/batch info for this teacher
+                            const parts = val.split(' / ');
+                            parts.forEach(part => {
+                                if (part.includes(`(${tName})`)) {
+                                    // For practicals: "A: ADS (TBD) in Lab(A)"
+                                    // For lectures: "Subject (Teacher)"
+                                    let teacherPart = '';
+                                    if (part.includes(':') && part.includes('in Lab')) {
+                                        // Practical format - show batch and subject
+                                        const match = part.match(/^([^:]+):\s*(.+?)\s*\(/);
+                                        if (match) {
+                                            teacherPart = `${match[1]}: ${match[2]}`;
+                                        } else {
+                                            teacherPart = part.split('(')[0].trim();
+                                        }
+                                    } else {
+                                        // Lecture format - just subject
+                                        teacherPart = part.split('(')[0].trim();
+                                    }
+                                    
+                                    // Check if it's a practical (contains Lab reference)
+                                    const isPractical = part.includes('in Lab');
+                                    const typeLabel = isPractical ? '<span class="text-[8px] bg-purple-200 text-purple-700 px-1 rounded mr-1">LAB</span>' : '<span class="text-[8px] bg-blue-200 text-blue-700 px-1 rounded mr-1">LEC</span>';
+                                    const textClass = isPractical ? 'text-purple-800' : 'text-blue-800';
+                                    const subTextClass = isPractical ? 'text-purple-400' : 'text-blue-400';
+                                    
+                                    // Extract lab info for practicals
+                                    let labInfo = '';
+                                    if (isPractical) {
+                                        const labMatch = part.match(/in\s+(Lab\([^)]+\))/);
+                                        if (labMatch) {
+                                            labInfo = ` • ${labMatch[1]}`;
+                                        }
+                                    }
+                                    
+                                    found.push(`<div class="font-black ${textClass} text-sm mb-1">${cls} ${typeLabel}</div><div class="text-[10px] font-black ${subTextClass} uppercase">${teacherPart}${labInfo}</div>`);
+                                }
+                            });
+                        }
+                    });
+
+                    const td = document.createElement('td');
+                    td.className = 'p-4 min-w-[180px] transition-all border border-slate-200';
+                    
+                    if (isLunch) {
+                        td.className += ' lunch-cell text-center opacity-40 font-black text-[10px] uppercase tracking-widest';
+                        td.innerText = 'Break';
+                    } else if (isTp) {
+                        td.className += ' tp-cell text-center font-bold text-[11px] uppercase tracking-wider bg-orange-50';
+                        td.innerHTML = '<div class="flex flex-col items-center justify-center gap-1"><i data-lucide="briefcase" class="w-4 h-4 text-orange-500"></i><span class="text-orange-600">T&P Session</span></div>';
+                    } else if (isLibrary) {
+                        td.className += ' library-cell text-center font-bold text-[11px] uppercase tracking-wider bg-green-50';
+                        td.innerHTML = '<div class="flex flex-col items-center justify-center gap-1"><i data-lucide="book-open" class="w-4 h-4 text-green-500"></i><span class="text-green-600">Library</span></div>';
+                    } else if (found.length > 0) {
+                        // Display all assignments for this teacher
+                        const hasPractical = found.some(f => f.includes('LAB'));
+                        if (hasPractical) {
+                            td.className += ' shadow-inner bg-purple-50/50 border-l-4 border-l-purple-400';
+                        } else {
+                            td.className += ' busy-cell shadow-inner bg-blue-50/50';
+                        }
+                        td.innerHTML = '<div class="space-y-2">' + found.join('') + '</div>';
+                    } else {
+                        td.className += ' text-slate-200 flex items-center justify-center';
+                        td.innerHTML = '<i data-lucide="coffee" class="w-4 h-4 opacity-10"></i>';
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function renderBatchTimetable() {
+            const selectedDay = document.getElementById('select-day-batch').value;
+            if (!state.timetableData) return;
+
+            const tbody = document.getElementById('tbody-batch');
+            tbody.innerHTML = '';
+
+            const practicalSlots = ["10:00 - 11:00", "11:00 - 12:00", "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00"];
+
+            // For each class and batch
+            Object.entries(state.timetableData.timetable).forEach(([cls, days]) => {
+                const dayData = days[selectedDay];
+                // Find the class data to get batches
+                const classData = state.formClasses.find(c => c.name === cls);
+                const classBatches = classData ? classData.batches : [];
+                
+                classBatches.forEach((batch, batchIdx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'group transition-all hover:bg-slate-50/50';
+                    
+                    // Class/Batch name cell
+                    const tdName = document.createElement('td');
+                    tdName.className = 'p-4 border-r border-slate-100 font-extrabold text-slate-600 bg-slate-50/30 text-xs';
+                    tdName.innerHTML = `<span class="text-blue-600">${cls}</span> - ${batch}`;
+                    tr.appendChild(tdName);
+
+                    // For each time slot
+                    practicalSlots.forEach(slot => {
+                        const td = document.createElement('td');
+                        td.className = 'p-3 min-w-[140px] transition-all border border-slate-200';
+                        
+                        const val = dayData[slot];
+                        
+                        if (val === 'PROJECT DAY') {
+                            td.className += ' project-cell text-center font-bold text-[10px] uppercase';
+                            td.innerHTML = '<span class="vertical-text">PROJECT DAY</span>';
+                        } else if (val === 'Lunch Break') {
+                            td.className += ' lunch-cell text-center font-bold text-[10px] uppercase opacity-60';
+                            td.innerText = 'Lunch';
+                        } else if (val === 'T&P Session') {
+                            td.className += ' tp-cell text-center font-bold text-[10px] uppercase';
+                            td.innerHTML = '<i data-lucide="briefcase" class="w-3 h-3 inline mr-1"></i>T&P';
+                        } else if (val === 'Library') {
+                            td.className += ' library-cell text-center font-bold text-[10px] uppercase';
+                            td.innerHTML = '<i data-lucide="book-open" class="w-3 h-3 inline mr-1"></i>Library';
+                        } else if (val === 'MERGED') {
+                            td.className += ' bg-slate-50';
+                            td.innerText = '-';
+                        } else if (val) {
+                            // Check if this batch has a practical in this combined slot
+                            // Format: "A: ADS (TBD) in Lab(A) / B: DC (ABC) in Lab(B)"
+                            const batchAssignments = val.split(' / ');
+                            const batchAssignment = batchAssignments.find(ba => ba.startsWith(`${batch}:`));
+                            
+                            if (batchAssignment) {
+                                // This batch has a practical here - format: "A: ADS (TBD) in Lab(A)"
+                                const match = batchAssignment.match(/^[^:]+:\s*(.+?)\s*\((.+?)\)\s*in\s*(.+)/);
+                                if (match) {
+                                    const [, subj, teacher, lab] = match;
+                                    td.className += ' bg-blue-50 border-l-4 border-l-blue-500';
+                                    td.innerHTML = `
+                                        <div class="font-black text-blue-800 text-xs">${subj}</div>
+                                        <div class="text-[9px] font-bold text-blue-400">${teacher} • ${lab}</div>
+                                    `;
+                                } else {
+                                    td.className += ' bg-blue-50 border-l-4 border-l-blue-500';
+                                    td.innerHTML = `<div class="font-black text-blue-800 text-xs">${batchAssignment.split('(')[0]}</div>`;
+                                }
+                            } else if (val.includes('in Lab')) {
+                                // Another batch has practical here
+                                td.className += ' bg-slate-50 opacity-50';
+                                td.innerHTML = '<div class="w-2 h-2 bg-slate-200 rounded-full mx-auto"></div>';
+                            } else {
+                                // Empty slot
+                                td.className += ' bg-white';
+                                td.innerHTML = '<div class="w-2 h-2 bg-slate-100 rounded-full mx-auto"></div>';
+                            }
+                        }
+                        tr.appendChild(td);
+                    });
+                    
+                    tbody.appendChild(tr);
+                });
+            });
+            lucide.createIcons();
+        }
+
+        // --- Utilities ---
+        function showAlert(msg, type) {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            const colors = {
+                error: 'bg-white text-red-600 border-red-100',
+                success: 'bg-white text-emerald-600 border-emerald-100',
+                info: 'bg-white text-blue-600 border-blue-100'
+            };
+            alert.className = `p-5 rounded-2xl border ${colors[type]} flex items-center gap-4 font-bold shadow-2xl pointer-events-auto transform translate-x-full animate-in slide-in-from-right duration-500`;
+            alert.innerHTML = `
+                <div class="p-2 rounded-lg bg-slate-50"><i data-lucide="${type === 'error' ? 'alert-octagon' : 'check-circle-2'}"></i></div>
+                <div class="pr-8">${msg}</div>
+            `;
+            container.appendChild(alert);
+            lucide.createIcons();
+            setTimeout(() => {
+                alert.classList.add('animate-out', 'fade-out', 'slide-out-to-right');
+                setTimeout(() => alert.remove(), 500);
+            }, 5000);
+        }
+
+        function exportPDF(type) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            const title = type === 'Class' ? 
+                `${document.getElementById('select-class').value} - Timetable` : 
+                `${document.getElementById('select-teacher').options[document.getElementById('select-teacher').selectedIndex].text} - Schedule`;
+            
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(28);
+            doc.setTextColor(15, 23, 42);
+            doc.text(state.collegeName.toUpperCase(), 40, 60);
+            
+            doc.setFontSize(14);
+            doc.setTextColor(100, 116, 139);
+            doc.text(title, 40, 85);
+            
+            doc.setDrawColor(241, 245, 249);
+            doc.line(40, 100, 800, 100);
+
+            const tableId = type === 'Class' ? 'table-class' : 'table-teacher';
+            
+            doc.autoTable({
+                html: `#${tableId}`,
+                startY: 120,
+                theme: 'grid',
+                headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', cellPadding: 10 },
+                styles: { fontSize: 8, cellPadding: 8, font: "helvetica", halign: 'center', valign: 'middle' },
+                columnStyles: { 0: { fontStyle: 'bold', fillColor: [248, 250, 252], textColor: [100, 116, 139] } },
+                didParseCell: (data) => {
+                    if (data.cell.text[0] === 'PROJECT DAY') {
+                        data.cell.styles.fillColor = [255, 241, 242];
+                        data.cell.styles.textColor = [225, 29, 72];
+                    }
+                }
+            });
+
+            doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
+        }
+    </script>
+</body>
+</html>
