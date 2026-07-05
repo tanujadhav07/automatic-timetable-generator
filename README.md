@@ -80,7 +80,14 @@ Runs backend unit tests validating timetable scheduling logic.
 -  Responsive Svelte frontend
 -  REST API powered by Flask
 -  Unit testing using Pytest
+## 📷 Screenshots
 
+| Dashboard|Faculty workload |
+
+| ![](screenshots/Dashboard.png) | ![](screenshots/Faculty workload.png) |
+
+  Timetable
+ ![](screenshots/timetable.png) 
 ## API Endpoints
 
 - `GET /api/timetable` — fetch generated timetable
