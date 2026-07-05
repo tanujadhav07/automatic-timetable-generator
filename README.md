@@ -66,7 +66,7 @@ Runs backend unit tests validating timetable scheduling logic.
 - **Styling**: Scoped Svelte styles (CSS-in-JS)
 - **Export**: jsPDF (PDF export feature)
 
-## Features
+
 
 ##  Features
 
