@@ -1,9 +1,17 @@
-# Timetable Generator — Modern Tech Stack
+#  Automatic Timetable Generator
 
-A timetable generation system with a Flask backend and a modern **Svelte + Vite** frontend (no plain HTML/CSS/JavaScript).
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Flask](https://img.shields.io/badge/Flask-Backend-black)
+![Svelte](https://img.shields.io/badge/Svelte-Frontend-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## Quick Start
+A web application that automatically generates conflict-free college timetables using a scheduling algorithm. The system reduces manual effort by generating optimized schedules while avoiding teacher and class conflicts.
 
+## Problem Statement
+
+Creating college timetables manually is a repetitive and error-prone process. Coordinating teachers, classes, laboratories, practical sessions, and lunch breaks often results in scheduling conflicts.
+
+This project automates timetable generation by applying scheduling rules that ensure conflict-free and balanced timetables while significantly reducing manual work.
 ### 1. Backend (Python Flask)
 
 **Windows (PowerShell):**
@@ -60,12 +68,18 @@ Runs backend unit tests validating timetable scheduling logic.
 
 ## Features
 
-- Timetable generation with intelligent scheduling (4 practical days, project day, lecture-only day)
-- Per-class and per-day filtering
-- Dark mode toggle
-- PDF export via jsPDF
-- Responsive UI
-- **No plain HTML/CSS/JavaScript** — uses Svelte framework throughout
+##  Features
+
+-  Automatic timetable generation
+-  Teacher conflict detection
+-  Practical and laboratory scheduling
+-  Lunch break scheduling
+-  User authentication
+-  Class-wise timetable filtering
+-  PDF export
+-  Responsive Svelte frontend
+-  REST API powered by Flask
+-  Unit testing using Pytest
 
 ## API Endpoints
 
